@@ -33,7 +33,13 @@ class Message:
 
 #message = 00 01 03 00 00 00 01 11 9F
 
-querry = RequestRHR(1, 0, 1)
-message = Message(querry.slaveID, querry.PDU)
-print(message.message)
+#querry = RequestRHR(1, 0, 1)
+#message = Message(querry.slaveID, querry.PDU)
+#print(message.message)
 
+function_code = b'\x06'
+device_adress = b'\x12'
+data = function_code+device_adress
+print(data)
+
+function_code.
