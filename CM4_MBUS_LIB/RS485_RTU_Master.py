@@ -8,6 +8,9 @@ class RS485_RTU_Master:
     other_clients = [[],[],[]] #ports, devs, f_c ports
 
     # START of Initial configuration
+    def __init__(self):
+        pass
+        #TODO: delete temporary constructor
     def __init__(self, port_no: int, dev = None, flow_control_port: int = None, **kwargs):
         # Assign default values
         if dev == None:
@@ -79,13 +82,23 @@ class RS485_RTU_Master:
         logging.log(logging.INFO, f'RECEIVED DATA: {received_data}')
         return received_data
         #TODO: add exceptions
-
     # END of transfer functions
-
 
     def add_slave(self, slave_adress: int):
         self.servers.append(RS485_RTU_Master.slave(slave_adress))
     
+    def __calculate_CRC(data):
+        crc = 0xFFFF
+        for n in range(len(data)):
+            crc ^= data[n]
+            for i in range(8):
+                if crc & 1:
+                    crc >>= 1
+                    crc ^= 0xA001
+                else:
+                    crc >>= 1
+        return(crc.to_bytes(2))
+
     def write_single_holding_register(self, slave_adress: int, register_adress: int, register_value: int):
         #TODO: implement
         #TODO: check if valid adress
@@ -93,8 +106,12 @@ class RS485_RTU_Master:
         function_code = b'\x06'
         register_adress = register_adress.to_bytes(2)
         register_value = register_value.to_bytes(2)
-        data = slave_adress+function_code
+        data = slave_adress+function_code+register_adress+register_value
+        data = data+self.__calculate_CRC(data)
+        logging.log(logging.INFO, f'Prepared message to send: {data}')
+        #self.__send_data(data)
         pass
+
 
     class slave:
         def __init__(self, master: 'RS485_RTU_Master', adress: int):

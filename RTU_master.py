@@ -1,4 +1,4 @@
-
+from CM4_MBUS_LIB import RS485_RTU_Master
 
 class RequestRHR:
     functionCode = bytearray([0x03])
@@ -37,9 +37,6 @@ class Message:
 #message = Message(querry.slaveID, querry.PDU)
 #print(message.message)
 
-function_code = b'\x06'
-device_adress = b'\x12'
-data = function_code+device_adress
-print(data)
+master = RS485_RTU_Master.RS485_RTU_Master()
+master.write_single_holding_register(11, 4, b'ABCD')
 
-function_code.
