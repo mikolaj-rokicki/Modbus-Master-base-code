@@ -2,6 +2,10 @@ import RPi.GPIO as GPIO
 import serial
 from time import sleep
 import logging
+from Exceptions import *
+from typing import Union
+
+    
 
 class RS485_RTU_Master:
     PORTS_DEFAULTS = ((None, 10), ('/dev/TTYAMA3', 27), ('/dev/TTYAMA4', 7), ('/dev/TTYAMA0', 21))
@@ -9,46 +13,53 @@ class RS485_RTU_Master:
 
     # START of Initial configuration
     def __init__(self, port_no: int = None, dev = None, flow_control_port: int = None, **kwargs):
-        if port_no is None:
-            return
+        self.__overlap_checking = True
+        if type(port_no) is not int:
+            raise Initialization_Exception('port_no has to be an integer')
         # Assign default values
-        if dev == None:
+        if dev is None or flow_control_port is None:
             if len(RS485_RTU_Master.PORTS_DEFAULTS)-1 < port_no:
-                #TODO: add exception
-                pass
-            dev = RS485_RTU_Master.PORTS_DEFAULTS[port_no][0]
+                raise Initialization_Exception('port_no not in range of supported defaults')
             if dev == None:
-                #TODO: add exception
-                pass
-        if flow_control_port == None:
-            if len(RS485_RTU_Master.PORTS_DEFAULTS)-1 < port_no:
-                #TODO: add exception
-                pass
-            flow_control_port = RS485_RTU_Master.PORTS_DEFAULTS[port_no][1]
+                dev = RS485_RTU_Master.PORTS_DEFAULTS[port_no][0]
+                if dev == None:
+                    raise Initialization_Exception('Not avialable default device name for this port')
             if flow_control_port == None:
-                #TODO: add exception
-                pass
+                flow_control_port = RS485_RTU_Master.PORTS_DEFAULTS[port_no][1]
+                if flow_control_port == None:
+                    raise Initialization_Exception('Not avialable default flow control port for this port')
+        if type(dev) is not str:
+            raise Initialization_Exception('argument dev has to be string')
+        if type(flow_control_port) is not int:
+            raise Initialization_Exception('argument flow_control_port has to be a string')
 
         self.port_no = port_no
         self.dev = dev
         self.flow_control_port = flow_control_port
 
-        # TODO: fault control
-        if self.__check_overlap():
-            #TODO: add except
-            pass
+        if self.__overlap_checking:
+            if self.__check_overlap():
+                raise Initialization_Exception('Found overlaping ports/device names to turn off this exception use method configure_overlap_checking(False)')
         self.__configure_fc_port()
         self.__configure_connection()
-        # TODO: adding client ot static list
         for index, value in enumerate(self.port_no, self.dev, self.flow_control_port, start=0):
             RS485_RTU_Master.other_clients[index].append(value)
 
         self.servers = []
 
+    def convigure_overlap_checking(self, value: bool):
+        if type(value) is not bool:
+            raise Modbus_Exception('value of argument "value" has to be an bool')
+        self.__overlap_checking = value
+
     def __check_overlap(self):
         if self.port_no in self.other_clients[0]:
             return True
+        if self.port_no in self.other_clients[2]:
+            return True
         if self.dev in self.other_clients[1]:
+            return True
+        if self.flow_control_port in self.other_clients[0]:
             return True
         if self.flow_control_port in self.other_clients[2]:
             return True
@@ -84,7 +95,7 @@ class RS485_RTU_Master:
     # END of transfer functions
 
     def add_slave(self, slave_adress: int):
-        self.servers.append(RS485_RTU_Master.slave(slave_adress))
+        self.servers.append(RS485_RTU_Master.Slave(slave_adress))
     
     def __calculate_CRC(self, data):
         #TODO: fast conversion
@@ -99,10 +110,16 @@ class RS485_RTU_Master:
                     crc >>= 1
         return(crc.to_bytes(2, 'little'))
 
-    def write_single_holding_register(self, slave_adress: int, register_adress: int, register_value: int):
+    def write_single_holding_register(self, slave_adress: Union[int, bytes], register_adress: int, register_value: int):
         #TODO: check if valid adress
+        if type(slave_adress) is int:
+            if slave_adress < 1 or slave_adress > 247:
+                raise Modbus_Exception(f'value {slave_adress} is unsupported for slave_adress, it has to be an integer between 1 and 247!')
+            slave_adress = slave_adress.to_bytes(1)
+        elif type(slave_adress) is bytes:
+            pass
+             
         #TODO: add bytes as assepted argument type
-        slave_adress = slave_adress.to_bytes(1)
         function_code = b'\x06'
         register_adress = register_adress.to_bytes(2)
         register_value = register_value.to_bytes(2)
@@ -114,11 +131,14 @@ class RS485_RTU_Master:
         pass
 
 
-    class slave:
+    class Slave:
         def __init__(self, master: 'RS485_RTU_Master', adress: int):
             self.client = master
             self.adress = adress
         def write_single_holding_register(self, register_adress, register_value):
             self.client.write_single_holding_register(self.adress, register_adress, register_value)
             #TODO: dodać return
+
+
+
 
