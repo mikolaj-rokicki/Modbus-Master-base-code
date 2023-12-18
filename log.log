@@ -1,0 +1,3 @@
+2023-12-18 11:57:50,341 - WARNING - RS485_RTU_Master initialisation passed!
+2023-12-18 11:57:50,341 - INFO - Prepared message to send: 01060004abcd76ae
+2023-12-18 11:57:50,341 - WARNING - Data sending is turned off
