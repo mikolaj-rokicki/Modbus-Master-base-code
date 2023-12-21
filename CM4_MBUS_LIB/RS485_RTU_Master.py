@@ -24,7 +24,7 @@ class Connection_Interrupted_Exception(Transmission_Exception):
         logging.log(logging.WARNING, self.value)
 
 class RS485_RTU_Master:
-    PORTS_DEFAULTS = ((None, 10), ('/dev/TTYAMA3', 27), ('/dev/TTYAMA4', 7), ('/dev/TTYAMA0', 21))
+    PORTS_DEFAULTS = ((None, 10), ('/dev/ttyAMA3', 27), ('/dev/ttyAMA4', 7), ('/dev/ttyAMA0', 21))
     other_clients = [[],[],[]] #ports, devs, f_c ports
 
     # START of Initial configuration
@@ -61,8 +61,9 @@ class RS485_RTU_Master:
                 raise Initialization_Exception('Found overlaping ports/device names to turn off this exception use method configure_overlap_checking(False)')
         self.__configure_fc_port()
         self.__configure_connection()
-        for index, value in enumerate(self.port_no, self.dev, self.flow_control_port, start=0):
-            RS485_RTU_Master.other_clients[index].append(value)
+        RS485_RTU_Master.other_clients[0].append(port_no)
+        RS485_RTU_Master.other_clients[1].append(dev)
+        RS485_RTU_Master.other_clients[2].append(flow_control_port)
 
         self.servers = []
 
